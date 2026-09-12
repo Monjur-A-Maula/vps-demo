@@ -57,11 +57,7 @@ jobs:
               cp "$APP_DIR/.env" "$USER_HOME/bookapi/.env" 2>/dev/null || true
             fi
 
-            mkdir -p "$USER_HOME/deploy"
-            cp "$APP_DIR/.env" "$USER_HOME/deploy/.env" 2>/dev/null || true
-            cp "$USER_HOME/bookapi/.env" "$USER_HOME/deploy/.env" 2>/dev/null || true
-            cp "$APP_DIR/backend/server.js" "$USER_HOME/deploy/server.js" 2>/dev/null || true
-            cp "$APP_DIR/backend/package.json" "$USER_HOME/deploy/package.json" 2>/dev/null || true
+
             ln -sf "$APP_DIR" "$USER_HOME/bookapi" 2>/dev/null || true
 
             npm ci --prefix backend
