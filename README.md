@@ -119,42 +119,12 @@ DB_PASSWORD=your_mysql_password
 NEXT_PUBLIC_BASE_PATH=/<VPS_USER>/vps-demo
 EOF
 
-# Copy artifact files for exam console compliance
-mkdir -p /home/<VPS_USER>/deploy
-cp .env /home/<VPS_USER>/deploy/.env
-cp backend/server.js /home/<VPS_USER>/deploy/server.js
-cp backend/package.json /home/<VPS_USER>/deploy/package.json
-```
-
----
-
-### Step 2: Build and Start with PM2
-
-Install dependencies and build the Next.js frontend:
-```bash
-cd /home/<VPS_USER>/bookapi
-npm ci --prefix backend
-npm ci --prefix frontend
-NEXT_PUBLIC_BASE_PATH=/<VPS_USER>/vps-demo npm --prefix frontend run build
-```
-
-Start both services with PM2:
-```bash
-# Start backend
-PORT=4060 pm2 start backend/server.js --name "backend-<VPS_USER>-vps-demo"
-
-# Start frontend
-cd frontend
-pm2 start npm --name "frontend-<VPS_USER>-vps-demo" -- start -- -p 3060
-cd ..
-
-# Persist processes across reboots
-pm2 save
-```
-
-Verify PM2 status:
-```bash
-pm2 status
+# ---------------------------------------------------------
+# Note: DO NOT manually create the `deploy` folder, 
+# build the project, or start PM2. 
+# GitHub Actions (.github/workflows/ci-cd.yml) 
+# will handle all of that automatically on every push!
+# ---------------------------------------------------------
 ```
 
 ---
