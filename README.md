@@ -257,3 +257,48 @@ To ensure **100% PASS** on the **CSE 3100 Exam Console**:
 - [x] **BookAPI Symlink:** `/home/<VPS_USER>/bookapi` links to `/home/<VPS_USER>/vps-demo`.
 - [x] **MySQL Scoped Grants:** `<VPS_USER>@%` granted on `<VPS_USER>.*` inside `mysql-database`.
 - [x] **Nginx Config:** `/etc/nginx/sites-available/<VPS_USER>.conf` enabled with `<VPS_USER>.test`.
+
+---
+
+## 🛠️ Complete Server & Linux Cheat Sheet
+
+### 🚀 Process Management (PM2)
+* `pm2 list` — View all running apps, their RAM/CPU usage, and status.
+* `pm2 logs` — View live logs for your apps (crucial for finding errors).
+* `pm2 restart all` — Restart all apps (required after code updates or `.env` changes).
+* `pm2 stop <app_name>` — Temporarily stop a specific app.
+* `pm2 delete all` — Delete all apps from PM2 tracking.
+* `pm2 save` — Save the current list of running apps to auto-start on reboot.
+
+### 🌐 Web Server (Nginx)
+* `sudo nginx -t` — Check Nginx configuration for syntax errors.
+* `sudo systemctl reload nginx` — Apply changes without dropping active users.
+* `sudo systemctl restart nginx` — Completely restart the Nginx server.
+* `sudo systemctl status nginx` — Check Nginx health and status.
+* `cat /var/log/nginx/error.log` — View Nginx error logs (e.g., for 502 Bad Gateway).
+
+### 📂 File & Folder Management
+* `cp <file> <dest>` — Copy a file. (Use `cp -r` to copy folders).
+* `mv <file> <dest>` — Move or rename a file/folder.
+* `rm <file>` — Delete a file. (Use `rm -rf <folder>` to force delete a folder).
+* `mkdir <folder>` — Create a new directory.
+* `ls -la` — List all files and folders, including hidden ones (like `.env` or `.git`).
+* `pwd` — Print your current working directory path.
+
+### 🖥️ Server Monitoring
+* `htop` or `top` — Live task manager to view CPU and RAM usage by process.
+* `free -m` — Check available RAM in Megabytes.
+* `df -h` — Check available Hard Disk (Storage) space.
+
+### 🔌 Network & Ports
+* `curl http://localhost:4060` — Test if your app is responding locally.
+* `ping google.com` — Check if the server has active internet access.
+* `sudo ufw status` — Check the server firewall status (open/closed ports).
+
+### 🔑 Common Issues & Troubleshooting
+1. **"502 Bad Gateway" on browser:**
+   * Your backend or frontend has crashed. Run `pm2 logs` to see what error Node.js is throwing.
+2. **"Database Connection Refused":**
+   * Check your `.env` file (`cat .env`). Ensure `DB_PORT` is `3307` and `DB_PASSWORD` is correct.
+3. **App not updating after git pull:**
+   * You must run `npm run build` in the frontend again, and then `pm2 restart all`.
