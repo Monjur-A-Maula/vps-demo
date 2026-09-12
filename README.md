@@ -102,11 +102,11 @@ ssh <VPS_USER>@<VPS_HOST>
 Clone the repository and set up `.env`:
 ```bash
 cd /home/<VPS_USER>
-git clone YOUR_GITHUB_REPO_URL bookapi
-ln -sf /home/<VPS_USER>/bookapi /home/<VPS_USER>/vps-demo
-cd /home/<VPS_USER>/bookapi
+git clone YOUR_GITHUB_REPO_URL vps-demo
+ln -sf /home/<VPS_USER>/vps-demo /home/<VPS_USER>/bookapi
+cd /home/<VPS_USER>/vps-demo
 
-# Create .env file inside bookapi (checked directly by Exam Console)
+# Create .env file inside vps-demo (checked directly by Exam Console via symlink)
 cat << "EOF" > .env
 PORT=4060
 FRONTEND_PORT=3060
