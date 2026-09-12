@@ -11,7 +11,7 @@ const server = http.createServer((req, res) => {
     JSON.stringify({
       status: "ok",
       database: "up",
-      message: "Quanta is Online!",
+      message: "VPS Demo is Online!",
       roll: process.env.ROLL || process.env.DB_USER || "s20230204060",
     })
   );
