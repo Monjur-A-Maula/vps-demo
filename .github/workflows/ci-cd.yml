@@ -46,6 +46,7 @@ jobs:
             USER_HOME="${HOME:-/home/${{ secrets.VPS_USER }}}"
             APP_DIR="${{ secrets.VPS_APP_DIR }}"
             cd "$APP_DIR"
+            mv .git_backup .git 2>/dev/null || true
             git fetch origin main
             git reset --hard origin/main
 
@@ -57,6 +58,10 @@ jobs:
               cp "$APP_DIR/.env" "$USER_HOME/bookapi/.env" 2>/dev/null || true
             fi
 
+            mkdir -p "$USER_HOME/deploy"
+            cp "$APP_DIR/.env" "$USER_HOME/deploy/.env" 2>/dev/null || true
+            cp "$APP_DIR/backend/server.js" "$USER_HOME/deploy/server.js" 2>/dev/null || true
+            cp "$APP_DIR/backend/package.json" "$USER_HOME/deploy/package.json" 2>/dev/null || true
 
             ln -sf "$APP_DIR" "$USER_HOME/bookapi" 2>/dev/null || true
 
@@ -76,3 +81,5 @@ jobs:
             pm2 start npm --name "$FRONTEND_NAME" -- start -- -p ${{ secrets.FRONTEND_PORT || 3060 }}
 
             pm2 save
+            
+            mv .git .git_backup 2>/dev/null || true
