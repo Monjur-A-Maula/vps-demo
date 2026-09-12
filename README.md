@@ -17,14 +17,14 @@ Following standard Reverse Proxy Architecture (CSE 3100):
 ┌────────────────────────────────────────────────────────┐
 │                  Nginx Reverse Proxy                   │
 │   (/etc/nginx/sites-available/<VPS_USER>.conf)         │
-│  - Routes /<VPS_USER>/vps-demo      ➜ Frontend (3060)  │
-│  - Routes /<VPS_USER>/vps-demo/api/ ➜ Backend  (4060)  │
+│  - Routes /<VPS_USER>/vps-demo      ➜ Frontend (3999)  │
+│  - Routes /<VPS_USER>/vps-demo/api/ ➜ Backend  (4999)  │
 └──────────┬─────────────────────────────────┬───────────┘
-           │ (Reverse Proxy: 3060)           │ (Reverse Proxy: 4060)
+           │ (Reverse Proxy: 3999)           │ (Reverse Proxy: 4999)
            ▼                                 ▼
 ┌───────────────────────┐         ┌────────────────────────┐
 │  Next.js App Server   │         │   Node.js API Server   │
-│  (Port 3060 - PM2)    │         │   (Port 4060 - PM2)    │
+│  (Port 3999 - PM2)    │         │   (Port 4999 - PM2)    │
 └───────────────────────┘         └───────────┬────────────┘
                                               │ (TCP: 127.0.0.1:3307)
                                               ▼
@@ -80,13 +80,13 @@ npm install --prefix frontend
   ```bash
   npm --prefix backend run dev
   ```
-  Backend runs at: `http://localhost:4060`
+  Backend runs at: `http://localhost:4999`
 
 * **Start Frontend:**
   ```bash
   npm --prefix frontend run dev
   ```
-  Frontend runs at: `http://localhost:3060/<NEXT_PUBLIC_BASE_PATH>`
+  Frontend runs at: `http://localhost:3999/<NEXT_PUBLIC_BASE_PATH>`
 
 ---
 
@@ -117,9 +117,9 @@ git clone https://github.com/sihab-hasan/vps-demo.git vps-demo
 ```bash
 cd vps-demo
 cat << "EOF" > .env
-PORT=4060
-FRONTEND_PORT=3060
-BACKEND_PORT=4060
+PORT=4999
+FRONTEND_PORT=3999
+BACKEND_PORT=4999
 DB_HOST=127.0.0.1
 DB_PORT=3307
 DB_NAME=<VPS_USER>
@@ -147,9 +147,9 @@ NEXT_PUBLIC_BASE_PATH=/<VPS_USER>/vps-demo npm --prefix frontend run build
 
 ### Step 7: Start Apps in Background with PM2
 ```bash
-PORT=4060 pm2 start backend/server.js --name "backend-<VPS_USER>-vps-demo"
+PORT=4999 pm2 start backend/server.js --name "backend-<VPS_USER>-vps-demo"
 cd frontend
-pm2 start npm --name "frontend-<VPS_USER>-vps-demo" -- start -- -p 3060
+pm2 start npm --name "frontend-<VPS_USER>-vps-demo" -- start -- -p 3999
 cd ..
 pm2 save
 ```
@@ -161,7 +161,7 @@ server {
 listen 80;
 server_name <VPS_USER>.local <VPS_USER>.test;
 location /<VPS_USER>/vps-demo/api/ {
-proxy_pass http://127.0.0.1:4060/;
+proxy_pass http://127.0.0.1:4999/;
 proxy_http_version 1.1;
 proxy_set_header Host $host;
 proxy_set_header X-Real-IP $remote_addr;
@@ -169,7 +169,7 @@ proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 proxy_set_header X-Forwarded-Proto $scheme;
 }
 location /<VPS_USER>/vps-demo {
-proxy_pass http://127.0.0.1:3060;
+proxy_pass http://127.0.0.1:3999;
 proxy_http_version 1.1;
 proxy_set_header Host $host;
 proxy_set_header X-Real-IP $remote_addr;
@@ -209,8 +209,8 @@ Go to: `Settings ➔ Secrets and variables ➔ Actions ➔ New repository secret
 | `VPS_SSH_KEY` | `-----BEGIN OPENSSH...` | Private SSH key |
 | `VPS_PORT` | `22` | SSH port (defaults to 22) |
 | `VPS_APP_DIR`| `/home/<your_vps_username>/vps-demo` | Target directory on VPS |
-| `FRONTEND_PORT` | `3060` | PM2 Frontend port |
-| `BACKEND_PORT` | `4060` | PM2 Backend port |
+| `FRONTEND_PORT` | `3999` | PM2 Frontend port |
+| `BACKEND_PORT` | `4999` | PM2 Backend port |
 | `NEXT_PUBLIC_BASE_PATH` | `/<your_vps_username>/vps-demo` | App base path |
 | `PM2_APP_SUFFIX` | `<your_vps_username>-vps-demo` | PM2 naming prefix |
 
@@ -222,8 +222,8 @@ Every `git push origin main` triggers automatic test builds, code pull, dependen
 
 To ensure **100% PASS** on the **CSE 3100 Exam Console**:
 
-- [x] **Environment File:** `.env` contains `PORT=4060`, `DB_HOST=127.0.0.1`, `DB_PORT=3307`, `DB_NAME=<VPS_USER>`, `DB_USER=<VPS_USER>`.
-- [x] **Health Check:** `http://localhost:4060/` returns JSON with `status: "ok"` and `database: "up"`.
+- [x] **Environment File:** `.env` contains `PORT=4999`, `DB_HOST=127.0.0.1`, `DB_PORT=3307`, `DB_NAME=<VPS_USER>`, `DB_USER=<VPS_USER>`.
+- [x] **Health Check:** `http://localhost:4999/` returns JSON with `status: "ok"` and `database: "up"`.
 - [x] **PM2 Processes:** `backend-<VPS_USER>-vps-demo` and `frontend-<VPS_USER>-vps-demo` online.
 - [x] **Deployment Artifact:** `/home/<VPS_USER>/deploy` contains `.env`, `server.js`, and `package.json`.
 - [x] **BookAPI Symlink:** `/home/<VPS_USER>/bookapi` links to `/home/<VPS_USER>/vps-demo`.
@@ -263,7 +263,7 @@ To ensure **100% PASS** on the **CSE 3100 Exam Console**:
 * `df -h` — Check available Hard Disk (Storage) space.
 
 ### 🔌 Network & Ports
-* `curl http://localhost:4060` — Test if your app is responding locally.
+* `curl http://localhost:4999` — Test if your app is responding locally.
 * `ping google.com` — Check if the server has active internet access.
 * `sudo ufw status` — Check the server firewall status (open/closed ports).
 

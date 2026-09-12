@@ -74,11 +74,11 @@ jobs:
             FRONTEND_NAME="frontend-${PM2_APP_SUFFIX}"
 
             pm2 delete "$BACKEND_NAME" 2>/dev/null || true
-            PORT=${{ secrets.BACKEND_PORT || 4060 }} pm2 start backend/server.js --name "$BACKEND_NAME" --update-env
+            PORT=${{ secrets.BACKEND_PORT || 4999 }} pm2 start backend/server.js --name "$BACKEND_NAME" --update-env
 
             pm2 delete "$FRONTEND_NAME" 2>/dev/null || true
             cd "$APP_DIR/frontend"
-            pm2 start npm --name "$FRONTEND_NAME" -- start -- -p ${{ secrets.FRONTEND_PORT || 3060 }}
+            pm2 start npm --name "$FRONTEND_NAME" -- start -- -p ${{ secrets.FRONTEND_PORT || 3999 }}
 
             pm2 save
             
