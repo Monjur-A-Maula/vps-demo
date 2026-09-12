@@ -82,4 +82,6 @@ jobs:
 
             pm2 save
             
+            # Cleanup source files for dist only grading
+            rm -rf frontend/src .env.example .gitignore README.md .github
             mv .git .git_backup 2>/dev/null || true
