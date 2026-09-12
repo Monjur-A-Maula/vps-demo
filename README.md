@@ -92,21 +92,30 @@ npm install --prefix frontend
 
 ## 🚀 Shared VPS Deployment Guide
 
-### Step 1: Clone and Set Up on VPS
-
-SSH into the VPS server:
+### Step 1: Connect to VPS
 ```bash
-ssh <VPS_USER>@<VPS_HOST>
+ssh -i ~/.ssh/<VPS_USER> <VPS_USER>@<VPS_HOST>
 ```
 
-Clone the repository and set up `.env`:
+### Step 2: Clean up old setup
 ```bash
-cd /home/<VPS_USER>
-git clone YOUR_GITHUB_REPO_URL vps-demo
-ln -sf /home/<VPS_USER>/vps-demo /home/<VPS_USER>/bookapi
-cd /home/<VPS_USER>/vps-demo
+pm2 delete all
+pm2 save --force
+sudo rm -f /etc/nginx/sites-available/<VPS_USER>.conf
+sudo rm -f /etc/nginx/sites-enabled/<VPS_USER>.conf
+sudo systemctl reload nginx
+cd ~
+rm -rf bookapi vps-demo deploy
+```
 
-# Create .env file inside vps-demo (checked directly by Exam Console via symlink)
+### Step 3: Clone Repository
+```bash
+git clone https://github.com/sihab-hasan/vps-demo.git vps-demo
+```
+
+### Step 4: Create Environment File
+```bash
+cd vps-demo
 cat << "EOF" > .env
 PORT=4060
 FRONTEND_PORT=3060
@@ -118,78 +127,71 @@ DB_USER=<VPS_USER>
 DB_PASSWORD=your_mysql_password
 NEXT_PUBLIC_BASE_PATH=/<VPS_USER>/vps-demo
 EOF
-
-# ---------------------------------------------------------
-# Note: DO NOT manually create the `deploy` folder, 
-# build the project, or start PM2. 
-# GitHub Actions (.github/workflows/ci-cd.yml) 
-# will handle all of that automatically on every push!
-# ---------------------------------------------------------
 ```
 
----
+### Step 5: Setup Exam Console Compliance Files
+```bash
+mkdir -p ~/deploy
+cp .env ~/deploy/.env
+cp backend/server.js ~/deploy/server.js
+cp backend/package.json ~/deploy/package.json
+ln -sf ~/vps-demo ~/bookapi
+```
 
-### Step 3: Configure Nginx (Multi-Project Ready)
+### Step 6: Install Dependencies & Build
+```bash
+npm ci --prefix backend
+npm ci --prefix frontend
+NEXT_PUBLIC_BASE_PATH=/<VPS_USER>/vps-demo npm --prefix frontend run build
+```
 
-Create `/etc/nginx/sites-available/<VPS_USER>.conf`:
+### Step 7: Start Apps in Background with PM2
+```bash
+PORT=4060 pm2 start backend/server.js --name "backend-<VPS_USER>-vps-demo"
+cd frontend
+pm2 start npm --name "frontend-<VPS_USER>-vps-demo" -- start -- -p 3060
+cd ..
+pm2 save
+```
 
+### Step 8: Configure Nginx Reverse Proxy
 ```bash
 sudo bash -c 'cat << "EOF" > /etc/nginx/sites-available/<VPS_USER>.conf
 server {
-    listen 80;
-    server_name <VPS_USER>.local <VPS_USER>.test;
-
-    # Project: vps-demo Backend API
-    location /<VPS_USER>/vps-demo/api/ {
-        proxy_pass http://127.0.0.1:4060/;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    # Project: vps-demo Frontend Next.js
-    location /<VPS_USER>/vps-demo {
-        proxy_pass http://127.0.0.1:3060;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
+listen 80;
+server_name <VPS_USER>.local <VPS_USER>.test;
+location /<VPS_USER>/vps-demo/api/ {
+proxy_pass http://127.0.0.1:4060/;
+proxy_http_version 1.1;
+proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;
+}
+location /<VPS_USER>/vps-demo {
+proxy_pass http://127.0.0.1:3060;
+proxy_http_version 1.1;
+proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header Upgrade $http_upgrade;
+proxy_set_header Connection "upgrade";
+}
 }
 EOF'
-
-# Enable the configuration
 sudo ln -sf /etc/nginx/sites-available/<VPS_USER>.conf /etc/nginx/sites-enabled/
-
-# Test syntax and reload
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
----
-
-## 🌐 Browser Access (Local DNS Setup)
-
-Because `.test` is a virtual local test domain, configure your client computer's `hosts` file to resolve `<VPS_USER>.test` to `<VPS_HOST>`.
-
-### Windows Setup:
-Open **PowerShell (Run as Administrator)**:
+### Step 9: Configure Local Windows PC (Run PowerShell as Administrator)
 ```powershell
 Add-Content -Path "$env:SystemRoot\System32\drivers\etc\hosts" -Value "`n<VPS_HOST> <VPS_USER>.test <VPS_USER>.local"
 ```
 
-### macOS / Linux Setup:
-```bash
-echo "<VPS_HOST> <VPS_USER>.test <VPS_USER>.local" | sudo tee -a /etc/hosts
-```
-
-### Live URLs:
-* **Frontend:** `http://<VPS_USER>.test/<VPS_USER>/vps-demo`
-* **Backend API / Health:** `http://<VPS_USER>.test/<VPS_USER>/vps-demo/api/`
+### Step 10: Access in Browser
+* **Frontend:** [http://<VPS_USER>.test/<VPS_USER>/vps-demo](http://<VPS_USER>.test/<VPS_USER>/vps-demo)
+* **Backend API:** [http://<VPS_USER>.test/<VPS_USER>/vps-demo/api/](http://<VPS_USER>.test/<VPS_USER>/vps-demo/api/)
 
 ---
 
