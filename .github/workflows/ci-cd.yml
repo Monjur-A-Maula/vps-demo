@@ -1,87 +1,26 @@
-name: Deploy to VPS
+﻿name: Node.js CI
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:
+    branches: [ "main" ]
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        node-version: [14.x, 16.x, 18.x]
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: |
-            backend/package-lock.json
-            frontend/package-lock.json
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
 
-      - name: Install backend dependencies
-        run: npm ci --prefix backend
-
-      - name: Install frontend dependencies
-        run: npm ci --prefix frontend
-
-      - name: Build frontend
-        env:
-          NEXT_PUBLIC_BASE_PATH: ${{ secrets.NEXT_PUBLIC_BASE_PATH }}
-        run: npm --prefix frontend run build
-
-      - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT || 22 }}
-          script: |
-            set -e
-            USER_HOME="${HOME:-/home/${{ secrets.VPS_USER }}}"
-            APP_DIR="${{ secrets.VPS_APP_DIR }}"
-            cd "$APP_DIR"
-            mv .git_backup .git 2>/dev/null || true
-            git fetch origin main
-            git reset --hard origin/main
-
-            # Ensure .env is present in bookapi, app dir, and deploy
-            if [ -f "$USER_HOME/bookapi/.env" ]; then
-              cp "$USER_HOME/bookapi/.env" "$APP_DIR/.env" 2>/dev/null || true
-            elif [ -f "$APP_DIR/.env" ]; then
-              mkdir -p "$USER_HOME/bookapi"
-              cp "$APP_DIR/.env" "$USER_HOME/bookapi/.env" 2>/dev/null || true
-            fi
-
-            mkdir -p "$USER_HOME/deploy"
-            cp "$APP_DIR/.env" "$USER_HOME/deploy/.env" 2>/dev/null || true
-            cp "$APP_DIR/backend/server.js" "$USER_HOME/deploy/server.js" 2>/dev/null || true
-            cp "$APP_DIR/backend/package.json" "$USER_HOME/deploy/package.json" 2>/dev/null || true
-
-            ln -sf "$APP_DIR" "$USER_HOME/bookapi" 2>/dev/null || true
-
-            npm ci --prefix backend
-            npm ci --prefix frontend
-            NEXT_PUBLIC_BASE_PATH="${{ secrets.NEXT_PUBLIC_BASE_PATH }}" npm --prefix frontend run build
-
-            PM2_APP_SUFFIX="${{ secrets.PM2_APP_SUFFIX }}"
-            BACKEND_NAME="backend-${PM2_APP_SUFFIX}"
-            FRONTEND_NAME="frontend-${PM2_APP_SUFFIX}"
-
-            pm2 delete "$BACKEND_NAME" 2>/dev/null || true
-            PORT=${{ secrets.BACKEND_PORT || 4999 }} pm2 start backend/server.js --name "$BACKEND_NAME" --update-env
-
-            pm2 delete "$FRONTEND_NAME" 2>/dev/null || true
-            cd "$APP_DIR/frontend"
-            pm2 start npm --name "$FRONTEND_NAME" -- start -- -p ${{ secrets.FRONTEND_PORT || 3999 }}
-
-            pm2 save
-            
-            # Cleanup source files for dist only grading
-            rm -rf frontend/src .env.example .gitignore README.md .github
-            mv .git .git_backup 2>/dev/null || true
+    - run: npm install
+    - run: npm run lint
+    - run: npm test
